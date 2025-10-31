@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Book a Flight | Skywings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+
+  <body class="bg-gradient-to-br from-blue-100 to-blue-300 min-h-screen flex flex-col items-center py-10 scroll-smooth">
+
+    <!-- 🧭 Header / Navbar -->
+    <header class="w-full bg-white shadow-md fixed top-0 left-0 z-50">
+      <div class="max-w-6xl mx-auto flex justify-between items-center py-4 px-6">
+        <h1 class="text-2xl font-bold text-blue-700">✈️ Skywings</h1>
+        <nav class="flex items-center space-x-6">
+          <a href="index.html" class="text-gray-700 hover:text-blue-700 font-medium">Home</a>
+
+          <!-- Offers dropdown -->
+          <div class="relative group">
+            <button class="text-gray-700 hover:text-blue-700 font-medium flex items-center gap-1">
+              Offers <span class="text-sm">▼</span>
+            </button>
+            <div class="absolute hidden group-hover:block bg-white shadow-lg rounded-md mt-2 w-40">
+              <a href="#" class="block px-4 py-2 hover:bg-blue-50">Student Discount</a>
+              <a href="#" class="block px-4 py-2 hover:bg-blue-50">Festive Sale</a>
+              <a href="#" class="block px-4 py-2 hover:bg-blue-50">Last Minute Deals</a>
+            </div>
+          </div>
+
+          <!-- Contact dropdown -->
+          <div class="relative group">
+            <button class="text-gray-700 hover:text-blue-700 font-medium flex items-center gap-1">
+              Contact <span class="text-sm">▼</span>
+            </button>
+            <div class="absolute hidden group-hover:block bg-white shadow-lg rounded-md mt-2 w-40">
+              <a href="#" class="block px-4 py-2 hover:bg-blue-50">Email Us</a>
+              <a href="#" class="block px-4 py-2 hover:bg-blue-50">Call Support</a>
+              <a href="#" class="block px-4 py-2 hover:bg-blue-50">Help Center</a>
+            </div>
+          </div>
+
+          <!-- Book Trip Button -->
+          <a href="#bookSection" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">Book a Trip</a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Add top padding so content doesn’t hide behind fixed navbar -->
+    <div class="pt-28"></div>
+
+    <!-- Intro Section -->
+    <section class="text-center max-w-2xl mb-10">
+      <h1 class="text-4xl font-bold text-blue-800 mb-4">Welcome to Skywings Airlines 🌍</h1>
+      <p class="text-gray-700 text-lg leading-relaxed">
+        Plan your next adventure with Skywings! Whether you're flying for business or leisure,
+        we make booking easy, affordable, and reliable. Choose your destination and
+        let us take care of the rest.
+      </p>
+    </section>
+
+    <!-- Booking Form Section -->
+    <div id="bookSection" class="bg-white rounded-3xl shadow-2xl p-8 w-[90%] max-w-md mb-10">
+      <h2 class="text-3xl font-bold text-center text-blue-700 mb-6">Book Your Flight ✈️</h2>
+      <form id="bookingForm" class="space-y-4">
+        <input type="text" id="name" placeholder="Full Name" required class="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400">
+        <input type="email" id="email" placeholder="Email Address" required class="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400">
+
+        <select id="destination" required class="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400">
+          <option value="">Select Destination</option>
+          <option value="Delhi">Delhi</option>
+          <option value="Mumbai">Mumbai</option>
+          <option value="Dubai">Dubai</option>
+          <option value="Paris">Paris</option>
+        </select>
+
+        <input type="date" id="date" required class="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400">
+
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white w-full py-3 rounded-lg font-semibold transition-all">
+          Search Flights
+        </button>
+      </form>
+
+      <div class="text-center mt-6">
+        <a href="#top" class="text-blue-600 hover:underline">← Back to Top</a>
+      </div>
+    </div>
+
+    <!-- Flight Details Section -->
+    <div id="flightDetails" class="bg-white rounded-3xl shadow-xl p-8 w-[90%] max-w-3xl hidden">
+      <h3 class="text-2xl font-bold text-blue-700 mb-4">Available Flights</h3>
+      <table class="w-full border-collapse border border-gray-300 text-center">
+        <thead class="bg-blue-100">
+          <tr>
+            <th class="border border-gray-300 p-2">Airline</th>
+            <th class="border border-gray-300 p-2">Flight No.</th>
+            <th class="border border-gray-300 p-2">Departure</th>
+            <th class="border border-gray-300 p-2">Arrival</th>
+            <th class="border border-gray-300 p-2">Price</th>
+            <th class="border border-gray-300 p-2">Action</th>
+          </tr>
+        </thead>
+        <tbody id="flightTable"></tbody>
+      </table>
+    </div>
+
+    <script>
+      const flights = {
+        Delhi: [
+          { airline: "IndiGo", flightNo: "6E-102", departure: "08:30", arrival: "10:45", price: "₹4,200" },
+          { airline: "Air India", flightNo: "AI-555", departure: "12:15", arrival: "14:30", price: "₹4,850" },
+        ],
+        Mumbai: [
+          { airline: "Vistara", flightNo: "UK-221", departure: "09:00", arrival: "11:10", price: "₹5,100" },
+          { airline: "SpiceJet", flightNo: "SG-909", departure: "17:20", arrival: "19:35", price: "₹4,600" },
+        ],
+        Dubai: [
+          { airline: "Emirates", flightNo: "EK-507", departure: "06:50", arrival: "09:45", price: "₹22,000" },
+          { airline: "Air India", flightNo: "AI-995", departure: "22:15", arrival: "01:05", price: "₹20,500" },
+        ],
+        Paris: [
+          { airline: "Air France", flightNo: "AF-225", departure: "01:20", arrival: "06:10", price: "₹58,000" },
+          { airline: "Emirates", flightNo: "EK-75", departure: "09:30", arrival: "14:50", price: "₹56,700" },
+        ]
+      };
+
+      document.getElementById("bookingForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const destination = document.getElementById("destination").value;
+        const flightDetailsDiv = document.getElementById("flightDetails");
+        const flightTable = document.getElementById("flightTable");
+
+        flightTable.innerHTML = "";
+
+        if (destination && flights[destination]) {
+          flightDetailsDiv.classList.remove("hidden");
+
+          flights[destination].forEach((flight, index) => {
+            const row = `
+              <tr class="hover:bg-blue-50">
+                <td class="border border-gray-300 p-2">${flight.airline}</td>
+                <td class="border border-gray-300 p-2">${flight.flightNo}</td>
+                <td class="border border-gray-300 p-2">${flight.departure}</td>
+                <td class="border border-gray-300 p-2">${flight.arrival}</td>
+                <td class="border border-gray-300 p-2 font-semibold text-blue-700">${flight.price}</td>
+                <td class="border border-gray-300 p-2">
+                  <button onclick="bookFlight('${destination}', ${index})" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded">Book Now</button>
+                </td>
+              </tr>
+            `;
+            flightTable.insertAdjacentHTML("beforeend", row);
+          });
+        } else {
+          flightDetailsDiv.classList.add("hidden");
+          alert("No flights available for the selected destination.");
+        }
+      });
+
+      function bookFlight(destination, index) {
+        const name = document.getElementById("name").value;
+        const email = document.getElementById("email").value;
+        const date = document.getElementById("date").value;
+
+        if (!name || !email || !date) {
+          alert("Please fill out all form fields before booking!");
+          return;
+        }
+
+        const selectedFlight = flights[destination][index];
+        const bookingInfo = { name, email, date, destination, flight: selectedFlight };
+
+        localStorage.setItem("bookingInfo", JSON.stringify(bookingInfo));
+        window.location.href = "confirm.html";
+      }
+    </script>
+  </body>
+</html>
