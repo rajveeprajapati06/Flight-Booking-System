@@ -35,7 +35,7 @@
       document.getElementById("paymentForm").addEventListener("submit", function(e) {
         e.preventDefault();
 
-        // basic validation
+        
         const cardNumber = document.getElementById("cardNumber").value;
         const cvv = document.getElementById("cvv").value;
 
@@ -44,12 +44,13 @@
           return;
         }
 
-        // save payment status
+      
         localStorage.setItem("paymentStatus", "success");
 
-        // redirect to success page
+        
         window.location.href = "success.html";
       });
     </script>
   </body>
 </html>
+
