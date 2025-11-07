@@ -104,76 +104,82 @@
       </table>
     </div>
 
-    <script>
-      const flights = {
-        Delhi: [
-          { airline: "IndiGo", flightNo: "6E-102", departure: "08:30", arrival: "10:45", price: "₹4,200" },
-          { airline: "Air India", flightNo: "AI-555", departure: "12:15", arrival: "14:30", price: "₹4,850" },
-        ],
-        Mumbai: [
-          { airline: "Vistara", flightNo: "UK-221", departure: "09:00", arrival: "11:10", price: "₹5,100" },
-          { airline: "SpiceJet", flightNo: "SG-909", departure: "17:20", arrival: "19:35", price: "₹4,600" },
-        ],
-        Dubai: [
-          { airline: "Emirates", flightNo: "EK-507", departure: "06:50", arrival: "09:45", price: "₹22,000" },
-          { airline: "Air India", flightNo: "AI-995", departure: "22:15", arrival: "01:05", price: "₹20,500" },
-        ],
-        Paris: [
-          { airline: "Air France", flightNo: "AF-225", departure: "01:20", arrival: "06:10", price: "₹58,000" },
-          { airline: "Emirates", flightNo: "EK-75", departure: "09:30", arrival: "14:50", price: "₹56,700" },
-        ]
-      };
+   <script>
+document.getElementById("bookingForm").addEventListener("submit", (e) => {
+  e.preventDefault();
 
-      document.getElementById("bookingForm").addEventListener("submit", function (e) {
-        e.preventDefault();
+  const name = document.getElementById("name").value;
+  const email = document.getElementById("email").value;
+  const destination = document.getElementById("destination").value;
+  const date = document.getElementById("date").value;
 
-        const destination = document.getElementById("destination").value;
-        const flightDetailsDiv = document.getElementById("flightDetails");
-        const flightTable = document.getElementById("flightTable");
+  const flights = JSON.parse(localStorage.getItem("flights")) || [];
 
-        flightTable.innerHTML = "";
+  
+  const availableFlights = flights.filter(
+    f => f.to.toLowerCase() === destination.toLowerCase()
+  );
 
-        if (destination && flights[destination]) {
-          flightDetailsDiv.classList.remove("hidden");
+  const tableBody = document.getElementById("flightTable");
+  const flightDetailsDiv = document.getElementById("flightDetails");
+  tableBody.innerHTML = "";
 
-          flights[destination].forEach((flight, index) => {
-            const row = `
-              <tr class="hover:bg-blue-50">
-                <td class="border border-gray-300 p-2">${flight.airline}</td>
-                <td class="border border-gray-300 p-2">${flight.flightNo}</td>
-                <td class="border border-gray-300 p-2">${flight.departure}</td>
-                <td class="border border-gray-300 p-2">${flight.arrival}</td>
-                <td class="border border-gray-300 p-2 font-semibold text-blue-700">${flight.price}</td>
-                <td class="border border-gray-300 p-2">
-                  <button onclick="bookFlight('${destination}', ${index})" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded">Book Now</button>
-                </td>
-              </tr>
-            `;
-            flightTable.insertAdjacentHTML("beforeend", row);
-          });
-        } else {
-          flightDetailsDiv.classList.add("hidden");
-          alert("No flights available for the selected destination.");
-        }
-      });
+  if (availableFlights.length === 0) {
+    tableBody.innerHTML = `
+      <tr><td colspan="6" class="p-3 text-red-500 font-semibold">
+        No flights available for ${destination}
+      </td></tr>`;
+  } else {
+    availableFlights.forEach((flight, index) => {
+      const row = `
+        <tr>
+          <td class="border border-gray-300 p-2">${flight.flightName}</td>
+          <td class="border border-gray-300 p-2">#SW-${index + 100}</td>
+          <td class="border border-gray-300 p-2">${flight.from}</td>
+          <td class="border border-gray-300 p-2">${flight.to}</td>
+          <td class="border border-gray-300 p-2">₹${flight.price}</td>
+          <td class="border border-gray-300 p-2">
+            <button class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
+                    onclick="bookFlight(${index}, '${flight.flightName}', '${flight.from}', '${flight.to}', ${flight.price})">
+              Book
+            </button>
+          </td>
+        </tr>`;
+      tableBody.insertAdjacentHTML("beforeend", row);
+    });
+  }
 
-      function bookFlight(destination, index) {
-        const name = document.getElementById("name").value;
-        const email = document.getElementById("email").value;
-        const date = document.getElementById("date").value;
+  flightDetailsDiv.classList.remove("hidden");
+});
 
-        if (!name || !email || !date) {
-          alert("Please fill out all form fields before booking!");
-          return;
-        }
+function bookFlight(index, flightName, from, to, price) {
+  const name = document.getElementById("name").value;
+  const email = document.getElementById("email").value;
+  const date = document.getElementById("date").value;
 
-        const selectedFlight = flights[destination][index];
-        const bookingInfo = { name, email, date, destination, flight: selectedFlight };
+  const bookingData = {
+    name,
+    email,
+    from,
+    to,
+    date,
+    flightName,
+    price
+  };
 
-        localStorage.setItem("bookingInfo", JSON.stringify(bookingInfo));
-        window.location.href = "confirm.html";
-      }
-    </script>
+  
+  localStorage.setItem("bookingInfo", JSON.stringify(bookingData));
+
+  
+  const allBookings = JSON.parse(localStorage.getItem("bookings")) || [];
+  allBookings.push(bookingData);
+  localStorage.setItem("bookings", JSON.stringify(allBookings));
+
+  window.location.href = "confirm.html";
+}
+</script>
+
+
+
   </body>
 </html>
-
