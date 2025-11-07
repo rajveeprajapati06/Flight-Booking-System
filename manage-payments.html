@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage Payments | Skywings Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-blue-200 min-h-screen">
+
+  <nav class="bg-white shadow-md px-6 py-4 flex justify-between items-center">
+    <h1 class="text-2xl font-bold text-blue-700">✈️ Skywings Admin</h1>
+    <div>
+      <a href="dashboard.html" class="mx-3 text-blue-600 font-semibold hover:underline">Dashboard</a>
+      <a href="manage-flights.html" class="mx-3 text-blue-600 font-semibold hover:underline">Flights</a>
+      <a href="manage-bookings.html" class="mx-3 text-blue-600 font-semibold hover:underline">Bookings</a>
+      <button id="logout" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Logout</button>
+    </div>
+  </nav>
+
+  <main class="p-6">
+    <h2 class="text-2xl font-bold text-blue-700 mb-4">Manage Payments</h2>
+
+    <table class="min-w-full bg-white rounded-lg shadow-md">
+      <thead class="bg-blue-600 text-white">
+        <tr>
+          <th class="py-2 px-4">Name</th>
+          <th class="py-2 px-4">Amount</th>
+          <th class="py-2 px-4">Date</th>
+        </tr>
+      </thead>
+      <tbody id="paymentsTable"></tbody>
+    </table>
+  </main>
+
+  <script>
+    if (localStorage.getItem("adminLoggedIn") !== "true") window.location.href = "login.html";
+
+    const paymentsTable = document.getElementById("paymentsTable");
+    let payments = JSON.parse(localStorage.getItem("payments")) || [];
+
+    function renderPayments() {
+      paymentsTable.innerHTML = payments.map((p) => `
+        <tr class="border-b text-center">
+          <td class="py-2">${p.name}</td>
+          <td class="py-2">₹${p.amount}</td>
+          <td class="py-2">${p.date}</td>
+        </tr>
+      `).join("");
+    }
+
+    document.getElementById("logout").onclick = () => {
+      localStorage.removeItem("adminLoggedIn");
+      window.location.href = "login.html";
+    };
+
+    renderPayments();
+  </script>
+</body>
+</html>

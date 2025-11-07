@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | Skywings</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gradient-to-br from-blue-50 to-blue-200 min-h-screen">
+
+  
+  <nav class="bg-white shadow-md px-6 py-4 flex justify-between items-center">
+    <h1 class="text-2xl font-bold text-blue-700">✈️ Skywings Admin</h1>
+    <div class="space-x-4">
+      <a href="manage-flights.html" class="text-blue-600 font-semibold hover:underline">Flights</a>
+      <a href="manage-bookings.html" class="text-blue-600 font-semibold hover:underline">Bookings</a>
+      <a href="manage-payments.html" class="text-blue-600 font-semibold hover:underline">Payments</a>
+      <button id="logout" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Logout</button>
+    </div>
+  </nav>
+
+  
+  <main class="p-10 grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="bg-white shadow-lg rounded-xl p-6 text-center min-h-[180px] flex flex-col justify-center">
+      <h2 class="text-lg font-bold text-gray-600 mb-2">Total Flights</h2>
+      <p id="totalFlights" class="text-3xl font-bold text-blue-700">0</p>
+    </div>
+
+    <div class="bg-white shadow-lg rounded-xl p-6 text-center min-h-[180px] flex flex-col justify-center">
+      <h2 class="text-lg font-bold text-gray-600 mb-2">Total Bookings</h2>
+      <p id="totalBookings" class="text-3xl font-bold text-blue-700">0</p>
+    </div>
+
+    <div class="bg-white shadow-lg rounded-xl p-6 text-center min-h-[180px] flex flex-col justify-center">
+      <h2 class="text-lg font-bold text-gray-600 mb-2">Total Payments</h2>
+      <p id="totalPayments" class="text-3xl font-bold text-blue-700">0</p>
+    </div>
+  </main>
+
+  
+  <section class="px-10 pb-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+    
+    <div class="bg-white shadow-lg rounded-xl p-6 min-h-[180px] hover:scale-[1.03] transition-all duration-300">
+      <h2 class="text-lg font-bold text-gray-600 mb-3">Recent Bookings</h2>
+      <ul id="recentBookings" class="text-sm text-gray-700 space-y-2"></ul>
+    </div>
+
+    
+    <div class="bg-white shadow-lg rounded-xl p-6 min-h-[180px] hover:scale-[1.03] transition-all duration-300">
+      <h2 class="text-lg font-bold text-gray-600 mb-3">Top Destinations</h2>
+      <ul id="topDestinations" class="text-sm text-gray-700 space-y-2"></ul>
+    </div>
+
+    
+    <div class="bg-white shadow-lg rounded-xl p-6 min-h-[180px] hover:scale-[1.03] transition-all duration-300 text-center">
+      <h2 class="text-lg font-bold text-gray-600 mb-3">System Status</h2>
+      <p id="systemStatus" class="text-green-600 font-bold text-xl">✅ Online</p>
+    </div>
+
+    
+    <div class="bg-white shadow-lg rounded-xl p-6 min-h-[180px] hover:shadow-2xl transition-all duration-300 text-center">
+      <h2 class="text-lg font-bold text-gray-600 mb-3">Logged in as</h2>
+      <p class="text-xl font-semibold text-blue-700">Admin</p>
+      <p class="text-sm text-gray-500">Super Access | Full Control</p>
+    </div>
+
+    
+    <div class="bg-white shadow-lg rounded-xl p-6 min-h-[180px] hover:shadow-2xl transition-all duration-300 col-span-1 md:col-span-2">
+      <h2 class="text-lg font-bold text-gray-600 mb-3">Quick Actions</h2>
+      <div class="flex flex-wrap gap-4">
+        <a href="manage-flights.html" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">✈️ Add Flight</a>
+        <a href="manage-bookings.html" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">📄 View Bookings</a>
+        <a href="manage-payments.html" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">💳 View Payments</a>
+      </div>
+    </div>
+
+    
+    <div class="bg-white shadow-lg rounded-xl p-6 min-h-[180px] hover:shadow-2xl transition-all duration-300 text-center">
+      <h2 class="text-lg font-bold text-gray-600 mb-3">Current Time</h2>
+      <p id="liveClock" class="text-2xl font-bold text-blue-700"></p>
+    </div>
+
+  </section>
+
+  <script>
+    if (localStorage.getItem("adminLoggedIn") !== "true") {
+      window.location.href = "login.html";
+    }
+
+    const flights = JSON.parse(localStorage.getItem("flights")) || [];
+    const bookings = JSON.parse(localStorage.getItem("bookings")) || [];
+    const payments = JSON.parse(localStorage.getItem("payments")) || [];
+
+    document.getElementById("totalFlights").textContent = flights.length;
+    document.getElementById("totalBookings").textContent = bookings.length;
+    document.getElementById("totalPayments").textContent = payments.length;
+
+    document.getElementById("logout").onclick = () => {
+      localStorage.removeItem("adminLoggedIn");
+      window.location.href = "login.html";
+    };
+
+    document.getElementById("recentBookings").innerHTML =
+      bookings.slice(-3).reverse().map(b => `
+        <li>🧍 ${b.name} → ✈️ ${b.flight}</li>
+      `).join("") || "<p>No bookings yet</p>";
+
+    const countDest = bookings.reduce((acc, b) => {
+      acc[b.to] = (acc[b.to] || 0) + 1;
+      return acc;
+    }, {});
+
+    document.getElementById("topDestinations").innerHTML =
+      Object.entries(countDest).sort((a,b)=>b[1]-a[1]).slice(0,3)
+      .map(d => `<li>📍 ${d[0]} — ${d[1]} bookings</li>`).join("") || "<p>No data yet</p>";
+
+    setInterval(() => {
+      document.getElementById("liveClock").textContent =
+        new Date().toLocaleString();
+    }, 1000);
+
+  </script>
+
+</body>
+</html>
