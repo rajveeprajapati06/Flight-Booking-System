@@ -32,25 +32,33 @@
     </div>
 
     <script>
-      document.getElementById("paymentForm").addEventListener("submit", function(e) {
-        e.preventDefault();
+  document.getElementById("paymentForm").addEventListener("submit", function(e) {
+    e.preventDefault();
 
-        
-        const cardNumber = document.getElementById("cardNumber").value;
-        const cvv = document.getElementById("cvv").value;
+    const cardNumber = document.getElementById("cardNumber").value;
+    const cvv = document.getElementById("cvv").value;
 
-        if (cardNumber.length !== 16 || cvv.length !== 3) {
-          alert("Please enter valid card details.");
-          return;
-        }
+    if (cardNumber.length !== 16 || cvv.length !== 3) {
+      alert("Please enter valid card details.");
+      return;
+    }
 
-      
-        localStorage.setItem("paymentStatus", "success");
+    const booking = JSON.parse(localStorage.getItem("bookingInfo"));
+    const amount = booking?.flight?.price || 5000; // default if missing
 
-        
-        window.location.href = "success.html";
-      });
-    </script>
+    
+    const payments = JSON.parse(localStorage.getItem("payments")) || [];
+    payments.push({
+      name: booking?.name || "Unknown",
+      amount,
+      date: new Date().toLocaleString()
+    });
+    localStorage.setItem("payments", JSON.stringify(payments));
+
+    localStorage.setItem("paymentStatus", "success");
+    window.location.href = "success.html";
+  });
+</script>
+
   </body>
 </html>
-
