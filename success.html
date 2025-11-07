@@ -3,236 +3,293 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Payment Successful | Skywings</title>
+  <title>Boarding Pass / Payment Successful | Skywings</title>
+
+  
   <script src="https://cdn.tailwindcss.com"></script>
+
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 </head>
+
 <body class="bg-gradient-to-br from-green-100 to-green-300 flex items-center justify-center min-h-screen">
 
   <div class="bg-white rounded-3xl shadow-2xl p-8 w-[95%] max-w-2xl text-center">
     <h1 class="text-3xl font-bold text-green-700 mb-2">Payment Successful ✅</h1>
-    <p class="text-gray-700 mb-6">Thank you for booking with <strong>Skywings</strong> — your e-ticket is ready.</p>
+    <p class="text-gray-700 mb-6">Thank you for booking with <strong>Skywings</strong> — your boarding pass is ready.</p>
 
     <div id="summary" class="text-left text-gray-700 mb-6"></div>
 
     <div class="flex gap-4 justify-center">
-      <button id="downloadBtn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold">Download Ticket</button>
-      <a href="index.html" class="bg-gray-400 hover:bg-gray-500 text-white px-6 py-3 rounded-lg font-semibold">Home</a>
+      <button id="downloadBtn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold">
+        ⬇️ Download Boarding Pass
+      </button>
+      <a href="index.html" class="bg-gray-400 hover:bg-gray-500 text-white px-6 py-3 rounded-lg font-semibold">Back to Home</a>
     </div>
   </div>
 
   <script>
-    const { jsPDF } = window.jspdf;
-
+  (function(){
     
-    const bookingInfo = JSON.parse(localStorage.getItem("bookingInfo")) || null;
-
-    
-    function genPNR() {
+    function makePNR() {
       const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-      let pnr = "";
-      for (let i = 0; i < 6; i++) pnr += chars.charAt(Math.floor(Math.random() * chars.length));
-      return pnr;
+      return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
     }
-
-    
-    function genSeat() {
-      const row = Math.floor(Math.random() * 30) + 1; // 1-30
+    function makeSeat() {
       const letters = ["A","B","C","D","E","F"];
-      return row + letters[Math.floor(Math.random() * letters.length)];
+      return (Math.floor(Math.random() * 30) + 1) + letters[Math.floor(Math.random() * letters.length)];
+    }
+    function makeGate() {
+      return "G" + (Math.floor(Math.random() * 20) + 1);
     }
 
     
+    function normalizeBooking(raw) {
+      if (!raw || typeof raw !== "object") return null;
+
+      
+      const normalized = {};
+
+      normalized.name = raw.name || raw.passengerName || raw.fullName || "";
+      normalized.email = raw.email || raw.emailAddress || "";
+     
+      normalized.phone = raw.phone || raw.mobile || raw.phoneNumber || "";
+
+      
+      normalized.from = raw.from || (raw.flight && (raw.flight.departure || raw.flight.from)) || raw.origin || "";
+      
+      normalized.to = raw.destination || raw.to || (raw.flight && raw.flight.arrival) || raw.destinationCity || "";
+
+      normalized.date = raw.date || (raw.flight && raw.flight.date) || raw.travelDate || "";
+
+      normalized.time = raw.time || raw.flightTime || "";
+
+      
+      if (raw.flight && typeof raw.flight === "object") {
+        normalized.airline = raw.flight.airline || raw.flightName || "Skywings";
+        normalized.flightNo = raw.flight.flightNo || raw.flightNo || raw.flightNumber || raw.flightName || "SW" + Math.floor(Math.random()*900+100);
+        normalized.price = raw.flight.price || raw.flightFare || raw.price || raw.amount || "";
+        normalized.class = raw.flight.class || raw.class || "Economy";
+      } else {
+        normalized.airline = raw.airline || raw.flightName || "Skywings";
+        normalized.flightNo = raw.flightNo || raw.flightName || ("SW" + Math.floor(Math.random()*900+100));
+        normalized.price = raw.price || raw.fare || "";
+        normalized.class = raw.class || "Economy";
+      }
+
+      
+      normalized.seat = raw.seat || raw.seatNo || "";
+      normalized.pnr = raw.pnr || raw.bookingID || raw.bookingId || "";
+      normalized.gate = raw.gate || "";
+
+      
+      normalized._raw = raw;
+
+      return normalized;
+    }
+
+    
+    let bookingRaw = null;
+    try {
+      bookingRaw = JSON.parse(localStorage.getItem("bookingInfo")) || JSON.parse(localStorage.getItem("lastBooking")) || null;
+    } catch (err) {
+      bookingRaw = null;
+    }
+
+    const booking = normalizeBooking(bookingRaw);
+
     const summaryDiv = document.getElementById("summary");
-    if (!bookingInfo) {
-      summaryDiv.innerHTML = "<p class='text-red-600 text-center'>No booking found. Please make a booking first.</p>";
-      document.getElementById("downloadBtn").disabled = true;
-    } else {
-      // enrich bookingInfo with ticket fields if not present
-      if (!bookingInfo.pnr) bookingInfo.pnr = genPNR();
-      if (!bookingInfo.seat) bookingInfo.seat = genSeat();
-      if (!bookingInfo.gate) bookingInfo.gate = "G" + (Math.floor(Math.random() * 10) + 1); // G1-G10
-      if (!bookingInfo.class) bookingInfo.class = "Economy";
+    const downloadBtn = document.getElementById("downloadBtn");
 
-      
-      summaryDiv.innerHTML = `
-        <p><strong>Name:</strong> ${bookingInfo.name}</p>
-        <p><strong>Destination:</strong> ${bookingInfo.destination}</p>
-        <p><strong>Date:</strong> ${bookingInfo.date}</p>
-        <p><strong>Airline:</strong> ${bookingInfo.flight.airline} — <strong>Flight</strong> ${bookingInfo.flight.flightNo}</p>
-        <p><strong>PNR:</strong> ${bookingInfo.pnr} &nbsp; <strong>Seat:</strong> ${bookingInfo.seat} &nbsp; <strong>Gate:</strong> ${bookingInfo.gate}</p>
-      `;
-
-      
-      localStorage.setItem("bookingInfo", JSON.stringify(bookingInfo));
+    if (!booking) {
+      summaryDiv.innerHTML = "<p class='text-red-600 font-semibold'>No booking found! Please go back and complete your booking.</p>";
+      downloadBtn.disabled = true;
+      downloadBtn.classList.add("opacity-50","cursor-not-allowed");
+      return;
     }
 
     
-    function generateTicketPDF(info) {
-      const doc = new jsPDF({ unit: "pt", format: "a4" });
-      const left = 40;
-      const right = 555;
-      const width = 515; // printable width for card
-      const startY = 60;
+    if (!booking.pnr || booking.pnr.trim() === "") booking.pnr = makePNR();
+    if (!booking.seat || booking.seat.trim() === "") booking.seat = makeSeat();
+    if (!booking.gate || booking.gate.trim() === "") booking.gate = makeGate();
 
-      
-      doc.setFillColor(245, 248, 255); // soft light blue
-      doc.roundedRect(left - 10, startY - 20, width + 20, 300, 12, 12, "F");
+    
+    localStorage.setItem("bookingInfo", JSON.stringify({
+      name: booking.name,
+      email: booking.email,
+      phone: booking.phone,
+      from: booking.from,
+      to: booking.to,
+      date: booking.date,
+      time: booking.time,
+      flight: {
+        airline: booking.airline,
+        flightNo: booking.flightNo,
+        price: booking.price,
+        class: booking.class
+      },
+      pnr: booking.pnr,
+      seat: booking.seat,
+      gate: booking.gate
+    }));
 
-      
-      doc.setFillColor(41, 121, 255); // blue
-      doc.rect(left - 10, startY - 20, width + 20, 60, "F");
+    
+    summaryDiv.innerHTML = `
+      <p><strong>Name:</strong> ${booking.name || "--"}</p>
+      <p><strong>Email:</strong> ${booking.email || "--"}</p>
+      ${booking.phone ? `<p><strong>Phone:</strong> ${booking.phone}</p>` : ""}
+      <p><strong>From → To:</strong> ${booking.from || "--"} → ${booking.to || "--"}</p>
+      <p><strong>Date:</strong> ${booking.date || "--"} ${booking.time ? " | " + booking.time : ""}</p>
+      <p><strong>Flight:</strong> ${booking.airline} — ${booking.flightNo}</p>
+      <p><strong>Seat:</strong> ${booking.seat} &nbsp; <strong>Gate:</strong> ${booking.gate}</p>
+      <p><strong>PNR:</strong> ${booking.pnr} &nbsp; <strong>Price:</strong> ${booking.price ? "₹" + booking.price : "--"}</p>
+    `;
 
-      
-      function drawMainContent(imgDataURL) {
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(18);
+    
+    downloadBtn.addEventListener("click", async () => {
+      try {
+        const { jsPDF } = window.jspdf;
+        if (!jsPDF) throw new Error("jsPDF not loaded");
+
+        
+        const qrPayload = `${booking.pnr}|${booking.name}|${booking.flightNo}|${booking.from}|${booking.to}`;
+        const qr = new QRious({ value: qrPayload, size: 180 });
+        const qrDataUrl = qr.toDataURL();
+
+        
+        const doc = new jsPDF({ unit: "pt", format: "a4", orientation: "landscape" });
+
+        
+        const leftX = 30;
+        const topY = 30;
+
+        
+        doc.setFillColor(37, 99, 235); // blue
+        doc.rect(0, 0, doc.internal.pageSize.getWidth(), 60, "F");
+        doc.setFontSize(20);
         doc.setTextColor(255,255,255);
-        doc.text("Skywings", left + 10, startY + 18);
+        doc.text("✈ Skywings Airlines", leftX, 40);
 
         
-        if (imgDataURL) {
-          try {
-            doc.addImage(imgDataURL, "PNG", right - 140, startY - 10, 120, 40);
-          } catch (err) { /* ignore if image fails */ }
-        }
+        const boxY = 80;
+        const boxH = 260;
+        const boxW = doc.internal.pageSize.getWidth() - 60;
+        doc.setDrawColor(200);
+        doc.roundedRect(leftX, boxY, boxW, boxH, 8, 8);
 
         
-        doc.setFontSize(12);
+        const colLeftX = leftX + 18;
+        let y = boxY + 30;
         doc.setTextColor(30,30,30);
-
-        const col1X = left + 10;
-        const col2X = left + 260;
-
-        
-        let y = startY + 60;
+        doc.setFontSize(12);
+        doc.text("Passenger:", colLeftX, y);
+        doc.setFontSize(14);
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(11);
-        doc.text("PASSENGER", col1X, y);
+        doc.text(booking.name || "--", colLeftX + 90, y);
+
+        y += 24;
+        doc.setFontSize(12);
         doc.setFont("helvetica", "normal");
-        doc.text(info.name, col1X, y + 18);
+        doc.text("Email:", colLeftX, y);
+        doc.text(booking.email || "--", colLeftX + 90, y);
 
-        doc.setFont("helvetica", "bold");
-        doc.text("FLIGHT", col1X, y + 50);
-        doc.setFont("helvetica", "normal");
-        doc.text(`${info.flight.airline} • ${info.flight.flightNo}`, col1X, y + 68);
-
-        doc.setFont("helvetica", "bold");
-        doc.text("FROM", col1X, y + 96);
-        doc.setFont("helvetica", "normal");
-        doc.text("Current City", col1X, y + 114); // you may replace with origin if you track it
-
-        doc.setFont("helvetica", "bold");
-        doc.text("TO", col1X, y + 142);
-        doc.setFont("helvetica", "normal");
-        doc.text(info.destination, col1X, y + 160);
-
-        
-        doc.setFont("helvetica", "bold");
-        doc.text("DATE", col2X, y);
-        doc.setFont("helvetica", "normal");
-        doc.text(info.date, col2X, y + 18);
-
-        doc.setFont("helvetica", "bold");
-        doc.text("DEPART", col2X, y + 50);
-        doc.setFont("helvetica", "normal");
-        doc.text(info.flight.departure, col2X, y + 68);
-
-        doc.setFont("helvetica", "bold");
-        doc.text("ARRIVE", col2X, y + 96);
-        doc.setFont("helvetica", "normal");
-        doc.text(info.flight.arrival, col2X, y + 114);
-
-        doc.setFont("helvetica", "bold");
-        doc.text("CLASS", col2X, y + 142);
-        doc.setFont("helvetica", "normal");
-        doc.text(info.class, col2X, y + 160);
-
-        
-        const stripY = startY + 240;
-        doc.setFillColor(255, 255, 255);
-        doc.roundedRect(left - 10, stripY, width + 20, 60, 8,8, "F");
-
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(13);
-        doc.text(`PNR: ${info.pnr}`, left + 20, stripY + 36);
-        doc.text(`Seat: ${info.seat}`, left + 160, stripY + 36);
-        doc.text(`Gate: ${info.gate}`, left + 260, stripY + 36);
-
-        doc.setFont("helvetica", "bold");
-        doc.text(`${info.flight.price}`, right - 160, stripY + 36);
-
-        
-        const barcodeX = right - 80;
-        const barcodeY = startY + 40;
-        const barcodeW = 60;
-        const barcodeH = 190;
-       
-        doc.setFillColor(255,255,255);
-        doc.rect(barcodeX - 6, barcodeY - 6, barcodeW + 12, barcodeH + 12, "F");
-        
-        let barTop = barcodeY;
-        for (let i = 0; i < 25; i++) {
-          const barW = (Math.random() > 0.5) ? 6 : 3;
-          const x = barcodeX + (i * 2.4);
-          doc.setFillColor(40, 40, 40);
-          doc.rect(x, barTop, barW, barcodeH, "F");
+        y += 24;
+        if (booking.phone) {
+          doc.text("Phone:", colLeftX, y);
+          doc.text(booking.phone, colLeftX + 90, y);
+          y += 24;
         }
+
+        doc.text("From → To:", colLeftX, y);
+        doc.setFont("helvetica","bold");
+        doc.text(`${booking.from || "--"} → ${booking.to || "--"}`, colLeftX + 90, y);
+
+        y += 28;
+        doc.setFont("helvetica","normal");
+        doc.text("Date:", colLeftX, y);
+        doc.setFont("helvetica","bold");
+        doc.text(booking.date || "--", colLeftX + 90, y);
+
+        y += 24;
+        if (booking.time) {
+          doc.setFont("helvetica","normal");
+          doc.text("Time:", colLeftX, y);
+          doc.setFont("helvetica","bold");
+          doc.text(booking.time, colLeftX + 90, y);
+          y += 24;
+        }
+
+     
+        y += 4;
+        doc.setFontSize(12);
+        doc.setFont("helvetica","normal");
+        doc.text("Airline:", colLeftX, y);
+        doc.setFont("helvetica","bold");
+        doc.text(booking.airline || "Skywings", colLeftX + 90, y);
+
+        y += 22;
+        doc.setFont("helvetica","normal");
+        doc.text("Flight No.:", colLeftX, y);
+        doc.setFont("helvetica","bold");
+        doc.text(booking.flightNo || "--", colLeftX + 90, y);
+
+        const colRightX = leftX + boxW - 240;
+        let ry = boxY + 40;
+        doc.setFontSize(12);
+        doc.setFont("helvetica","normal");
+        doc.text("Class:", colRightX, ry);
+        doc.setFont("helvetica","bold");
+        doc.text(booking.class || "Economy", colRightX + 70, ry);
+
+        ry += 22;
+        doc.setFont("helvetica","normal");
+        doc.text("Seat:", colRightX, ry);
+        doc.setFont("helvetica","bold");
+        doc.text(booking.seat || "--", colRightX + 70, ry);
+
+        ry += 22;
+        doc.setFont("helvetica","normal");
+        doc.text("Gate:", colRightX, ry);
+        doc.setFont("helvetica","bold");
+        doc.text(booking.gate || "--", colRightX + 70, ry);
+
+        ry += 22;
+        doc.setFont("helvetica","normal");
+        doc.text("PNR:", colRightX, ry);
+        doc.setFont("helvetica","bold");
+        doc.text(booking.pnr || "--", colRightX + 70, ry);
+
+        ry += 28;
+        doc.setFont("helvetica","normal");
+        doc.text("Price:", colRightX, ry);
+        doc.setFont("helvetica","bold");
+        doc.text(booking.price ? `₹${booking.price}` : "--", colRightX + 70, ry);
+
+       
+        const qrX = leftX + boxW - 120;
+        const qrY = boxY + boxH - 140;
+        doc.addImage(qrDataUrl, "PNG", qrX, qrY, 100, 100);
 
         
         doc.setFontSize(9);
-        doc.setTextColor(120,120,120);
-        doc.text("Present this e-ticket at airport check-in. Terms & conditions apply.", left + 10, stripY + 80);
-      }
+        doc.setFont("helvetica","normal");
+        doc.text(`QR: ${booking.pnr}`, qrX, qrY + 115);
 
-      
-      function loadLogoThenDraw(cb) {
-        const logo = new Image();
-        logo.crossOrigin = "Anonymous";
-        logo.onload = function() {
-         
-          const canvas = document.createElement("canvas");
-          canvas.width = logo.width;
-          canvas.height = logo.height;
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(logo, 0, 0);
-          try {
-            const dataURL = canvas.toDataURL("image/png");
-            cb(dataURL);
-          } catch (e) {
-            cb(null);
-          }
-        };
-        logo.onerror = function() { cb(null); };
         
-        logo.src = "logo.png";
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text("Boarding pass is electronic. Carry a valid photo ID at check-in.", leftX + 10, boxY + boxH + 22);
+
+        const filename = `Skywings-BoardingPass-${booking.pnr}.pdf`;
+        doc.save(filename);
+      } catch (err) {
+        console.error(err);
+        alert("Error generating PDF. See console for details.");
       }
-
-      
-      return new Promise(resolve => {
-        loadLogoThenDraw(function (imgData) {
-          drawMainContent(imgData);
-          resolve(doc);
-        });
-      });
-    }
-
-   
-    document.getElementById("downloadBtn").addEventListener("click", async function() {
-      if (!bookingInfo) {
-        alert("No booking found!");
-        return;
-      }
-
-     
-      const pdfDoc = await generateTicketPDF(bookingInfo);
-      
-      const filename = `Skywings-Ticket-${bookingInfo.pnr}.pdf`;
-      pdfDoc.save(filename);
     });
 
+  })();
   </script>
 </body>
 </html>
-
